@@ -10,8 +10,7 @@ module MassInsert
     def start
       ActiveRecord::Base.transaction do
         values.each_slice(per_batch).each do |batch|
-          query = builder.build(batch, options)
-          executer.execute(query)
+          executer.execute builder.build(batch)
         end
       end
     end
@@ -19,7 +18,7 @@ module MassInsert
     private
 
     def builder
-      @builder ||= Builder.new
+      @builder ||= Builder.new(options)
     end
 
     def executer

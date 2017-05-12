@@ -1,8 +1,19 @@
 module MassInsert
   class Builder
-    def build(values, options)
-      class_name = options[:class_name]
-      Utilities.adapter_class.new(class_name, values, options).to_sql
+    attr_reader :options
+
+    def initialize(options)
+      @options = options
+    end
+
+    def build(values)
+      adapter.tap{ |a| a.values = values }.to_sql
+    end
+
+  private
+
+    def adapter
+      @adapter ||= Utilities.adapter_class.new(options)
     end
   end
 end

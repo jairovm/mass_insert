@@ -1,12 +1,12 @@
 module MassInsert
   module Adapters
     class AbstractAdapter < SimpleDelegator
-      attr_accessor :values, :options
+      attr_accessor :values
+      attr_reader   :options
 
-      def initialize(class_name, values, options)
-        @values  = values
+      def initialize(options)
         @options = options
-        super(class_name)
+        super options[:class_name]
       end
 
       def to_sql
@@ -34,7 +34,7 @@ module MassInsert
       end
 
       def columns_sql
-        "(#{quoted_columns.join(',')})"
+        @columns_sql ||= "(#{quoted_columns.join(',')})"
       end
 
       def values_sql
