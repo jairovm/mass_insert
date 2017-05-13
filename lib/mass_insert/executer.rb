@@ -1,9 +1,13 @@
 module MassInsert
   class Executer
+    attr_reader :options
+
+    def initialize(options)
+      @options = options
+    end
+
     def execute(query)
-      ActiveRecord::Base.transaction do
-        ActiveRecord::Base.connection.execute(query)
-      end
+      options[:class_name].connection.execute(query)
     end
   end
 end

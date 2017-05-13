@@ -8,7 +8,7 @@ module MassInsert
     end
 
     def start
-      ActiveRecord::Base.transaction do
+      options[:class_name].transaction do
         values.each_slice(per_batch).each do |batch|
           executer.execute builder.build(batch)
         end
@@ -22,7 +22,7 @@ module MassInsert
     end
 
     def executer
-      @executer ||= Executer.new
+      @executer ||= Executer.new(options)
     end
 
     def per_batch
