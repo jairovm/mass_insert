@@ -49,12 +49,13 @@ module MassInsert
 
       def array_of_attributes_sql
         values.map do |attrs|
-          columns.map do |name|
-            value = attrs[name.to_sym]
-            value = attrs[name.to_s] if value.nil?
-            connection.quote(value)
-          end.join(',')
+          columns.map { |c| connection.quote get_value(attrs, c) }.join(',')
         end
+      end
+
+      def get_value(attrs, name)
+        value = attrs[name.to_sym]
+        value.nil? ? attrs[name.to_s] : value
       end
 
       def association_objects
@@ -68,11 +69,11 @@ module MassInsert
           all_records, index = {}, 0
 
           values.each do |attrs|
-            records = attrs[association.name.to_sym]
-            records = attrs[association.name.to_s] if records.nil?
+            records = get_value(attrs, association.name)
 
             if records.present?
               records = [records] unless records.is_a?(Array)
+
               all_records[(index += 1) - 1] = records.each{ |r|
                 r.merge!(_foreign_keys: attrs[:_foreign_keys])
               }
