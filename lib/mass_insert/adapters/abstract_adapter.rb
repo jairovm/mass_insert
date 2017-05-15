@@ -69,8 +69,14 @@ module MassInsert
 
           values.each do |attrs|
             records = attrs[association.name.to_sym]
-            records = attrs[association.name.to_s]         if records.nil?
-            all_records[(index += 1) - 1] = Array(records) if records.present?
+            records = attrs[association.name.to_s] if records.nil?
+
+            if records.present?
+              records = [records] unless records.is_a?(Array)
+              all_records[(index += 1) - 1] = records.each{ |r|
+                r.merge!(_foreign_keys: attrs[:_foreign_keys])
+              }
+            end
           end
 
           hash[association.name.to_sym] = {

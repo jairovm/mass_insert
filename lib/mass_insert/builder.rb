@@ -21,7 +21,12 @@ module MassInsert
         associations[association] ||= { class_name: attrs[:class_name], values: [] }
 
         attrs[:all_records].each do |index, records|
-          values += records.each{ |r| r[ attrs[:foreign_key] ] = (id + index) }
+          values += records.each { |r|
+            r[ attrs[:foreign_key] ] = (id + index)
+
+            r[:_foreign_keys] ||= {}
+            r[:_foreign_keys][ attrs[:foreign_key] ] = r[ attrs[:foreign_key] ]
+          }
         end
 
         associations[association][:values] += values
