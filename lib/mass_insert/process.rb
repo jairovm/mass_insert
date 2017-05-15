@@ -10,12 +10,26 @@ module MassInsert
     def start
       options[:class_name].transaction do
         values.each_slice(per_batch).each do |batch|
-          executer.execute builder.build(batch)
+          result = executer.execute builder.build(batch).to_sql
+          builder.assign_foreign_key_to_associations(result) if options[:associations]
         end
+
+        builder.associations.each do |a, attrs|
+          process_association(attrs)
+        end if options[:associations]
       end
     end
 
-    private
+  private
+
+    def process_association(attrs)
+      association_values  = attrs.delete(:values)
+      attrs               = options.merge(attrs)
+      attrs[:class_name]  = attrs[:class_name].constantize
+      attrs[:primary_key] = false
+
+      self.class.new(association_values, attrs).start
+    end
 
     def builder
       @builder ||= Builder.new(options)

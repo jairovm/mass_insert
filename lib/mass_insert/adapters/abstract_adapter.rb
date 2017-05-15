@@ -4,6 +4,8 @@ module MassInsert
       attr_accessor :values
       attr_reader   :options
 
+      ASSOCIATION_TYPES = [:has_one, :has_many].freeze
+
       def initialize(options)
         @options = options
         super options[:class_name]
@@ -13,7 +15,11 @@ module MassInsert
         "#{insert_sql} #{values_sql};"
       end
 
-      private
+      def associations
+        associations_hash.reject{|a, attrs| attrs[:all_records].empty? }
+      end
+
+    private
 
       def columns
         @columns ||= begin
@@ -48,6 +54,32 @@ module MassInsert
             value = attrs[name.to_s] if value.nil?
             connection.quote(value)
           end.join(',')
+        end
+      end
+
+      def association_objects
+        @association_objects ||= reflect_on_all_associations.select{|a|
+          a.macro.in? ASSOCIATION_TYPES
+        }
+      end
+
+      def associations_hash
+        association_objects.inject({}) do |hash, association|
+          all_records, index = {}, 0
+
+          values.each do |attrs|
+            records = attrs[association.name.to_sym]
+            records = attrs[association.name.to_s]         if records.nil?
+            all_records[(index += 1) - 1] = Array(records) if records.present?
+          end
+
+          hash[association.name.to_sym] = {
+            class_name: association.class_name,
+            foreign_key: association.foreign_key.to_sym,
+            all_records: all_records
+          }
+
+          hash
         end
       end
     end
