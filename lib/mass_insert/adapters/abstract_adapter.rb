@@ -55,7 +55,13 @@ module MassInsert
 
       def get_value(attrs, name)
         value = attrs[name.to_sym]
-        value.nil? ? attrs[name.to_s] : value
+        value = attrs[name.to_s] if value.nil?
+
+        case value
+        when ::Proc then value.(attrs[:_foreign_keys])
+        else
+          value
+        end
       end
 
       def association_objects
