@@ -72,15 +72,15 @@ module MassInsert
 
       def associations_hash
         association_objects.inject({}) do |hash, association|
-          all_records, index = {}, 0
+          all_records = {}
 
-          values.each do |attrs|
+          values.each_with_index do |attrs, index|
             records = get_value(attrs, association.name)
 
             if records.present?
               records = [records] unless records.is_a?(Array)
 
-              all_records[(index += 1) - 1] = records.each{ |r|
+              all_records[index] = records.each{ |r|
                 r.merge!(_foreign_keys: attrs[:_foreign_keys])
               }
             end
