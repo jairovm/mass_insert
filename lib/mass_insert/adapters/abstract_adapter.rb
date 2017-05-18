@@ -49,18 +49,7 @@ module MassInsert
 
       def array_of_attributes_sql
         values.map do |attrs|
-          columns.map { |c| connection.quote get_value(attrs, c) }.join(',')
-        end
-      end
-
-      def get_value(attrs, name)
-        value = attrs[name.to_sym]
-        value = attrs[name.to_s] if value.nil?
-
-        case value
-        when ::Proc then value.(attrs[:_foreign_keys])
-        else
-          value
+          columns.map { |c| connection.quote column_value(attrs, c) }.join(',')
         end
       end
 
@@ -75,7 +64,7 @@ module MassInsert
           all_records = {}
 
           values.each_with_index do |attrs, index|
-            records = get_value(attrs, association.name)
+            records = column_value(attrs, association.name)
 
             if records.present?
               records = [records] unless records.is_a?(Array)
@@ -93,6 +82,16 @@ module MassInsert
           }
 
           hash
+        end
+      end
+
+      def column_value(attrs, column)
+        value = attrs.fetch(column.to_sym) { attrs.fetch(column.to_s, nil) }
+
+        case value
+        when ::Proc then value.(attrs[:_foreign_keys])
+        else
+          value
         end
       end
     end
