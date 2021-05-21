@@ -8,7 +8,7 @@ module MassInsert
     end
 
     def build(values)
-      adapter.tap{ |a| a.values = values }
+      adapter.tap { |a| a.values = values }
     end
 
     def to_sql
@@ -17,16 +17,17 @@ module MassInsert
 
     def assign_foreign_key_to_associations(result)
       adapter.associations.each do |association, attrs|
-        values, id = [], result['last_id'].to_i
+        values                      = []
+        id                          = result['last_id'].to_i
         associations[association] ||= { class_name: attrs[:class_name], values: [] }
 
-        attrs[:all_records].each do |index, records|
-          values += records.each { |r|
-            r[ attrs[:foreign_key] ] = (id + index)
+        attrs[:associations_hash].each do |index, records|
+          values += records.each do |record|
+            record[attrs[:foreign_key]] = (id + index)
 
-            r[:_foreign_keys] ||= {}
-            r[:_foreign_keys][ attrs[:foreign_key] ] = r[ attrs[:foreign_key] ]
-          }
+            record[:association_foreign_keys] ||= {}
+            record[:association_foreign_keys][attrs[:foreign_key]] = record[attrs[:foreign_key]]
+          end
         end
 
         associations[association][:values] += values

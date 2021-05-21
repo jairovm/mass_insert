@@ -10,14 +10,16 @@ module MassInsert
     def start
       options[:class_name].transaction do
         values.each_slice(per_batch).each do |batch|
-          result = executer.execute builder.build(batch).to_sql
+          result = executer.execute(builder.build(batch).to_sql)
           builder.assign_foreign_key_to_associations(result) if options[:associations]
         end
 
-        builder.associations.each do |a, attrs|
+        builder.associations.each do |_, attrs|
           process_association(attrs)
         end if options[:associations]
       end
+
+      true
     end
 
   private
@@ -40,7 +42,7 @@ module MassInsert
     end
 
     def per_batch
-      options[:per_batch] || Utilities.per_batch
+      options.fetch(:per_batch) { Utilities.per_batch }
     end
   end
 end

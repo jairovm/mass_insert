@@ -4,7 +4,7 @@ module MassInsert
       attr_accessor :values
       attr_reader   :options
 
-      ASSOCIATION_TYPES = [:has_one, :has_many].freeze
+      ASSOCIATION_TYPES = %i[has_one has_many].freeze
 
       def initialize(options)
         @options = options
@@ -16,7 +16,7 @@ module MassInsert
       end
 
       def associations
-        associations_hash.reject{|a, attrs| attrs[:all_records].empty? }
+        associations_hash.select { |_, attrs| attrs[:associations_hash].present? }
       end
 
     private
@@ -54,34 +54,28 @@ module MassInsert
       end
 
       def association_objects
-        @association_objects ||= reflect_on_all_associations.select{|a|
-          a.macro.in? ASSOCIATION_TYPES
-        }
+        @association_objects ||= reflect_on_all_associations.select do |a|
+          a.macro.in?(ASSOCIATION_TYPES)
+        end
       end
 
       def associations_hash
-        association_objects.inject({}) do |hash, association|
-          all_records = {}
+        association_objects.each_with_object({}) do |association, hash|
+          associations_hash = {}
 
           values.each_with_index do |attrs, index|
             records = column_value(attrs, association.name)
 
-            if records.present?
-              records = [records] unless records.is_a?(Array)
-
-              all_records[index] = records.each{ |r|
-                r.merge!(_foreign_keys: attrs[:_foreign_keys])
-              }
-            end
+            associations_hash[index] = Array(records).each do |record|
+              record.merge!(association_foreign_keys: attrs[:association_foreign_keys])
+            end if records.present?
           end
 
           hash[association.name.to_sym] = {
             class_name: association.class_name,
             foreign_key: association.foreign_key.to_sym,
-            all_records: all_records
+            associations_hash: associations_hash
           }
-
-          hash
         end
       end
 
@@ -89,7 +83,7 @@ module MassInsert
         value = attrs.fetch(column.to_sym) { attrs.fetch(column.to_s, nil) }
 
         case value
-        when ::Proc then value.(attrs[:_foreign_keys])
+        when ::Proc then value.call(attrs[:association_foreign_keys])
         else
           value
         end
