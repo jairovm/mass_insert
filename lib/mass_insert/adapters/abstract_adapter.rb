@@ -66,7 +66,7 @@ module MassInsert
           values.each_with_index do |attrs, index|
             records = column_value(attrs, association.name)
 
-            associations_hash[index] = Array(records).each do |record|
+            associations_hash[index] = Array.wrap(records).each do |record|
               record.merge!(association_foreign_keys: attrs[:association_foreign_keys])
             end if records.present?
           end
