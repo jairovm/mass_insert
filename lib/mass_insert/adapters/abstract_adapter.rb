@@ -83,7 +83,7 @@ module MassInsert
         value = attrs.fetch(column.to_sym) { attrs.fetch(column.to_s, nil) }
 
         case value
-        when ::Proc then value.call(attrs[:association_foreign_keys])
+        when ::Proc then value.call(attrs)
         else
           value
         end
